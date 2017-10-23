@@ -1,0 +1,18 @@
+{
+    "name": "austinw/elevator",
+    "description": "Assessment for LenderHomePage.com",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Austin White",
+            "email": "austingym@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "AustinW\\Elevator\\": "src"
+        }
+    }
+}
