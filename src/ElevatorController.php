@@ -1,30 +1,32 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: austinwhite
- * Date: 10/23/17
- * Time: 3:32 PM
- */
 
 namespace AustinW\Elevator;
 
-
 class ElevatorController
 {
-    protected $elevator;
+    protected $elevators;
+
+    protected $requests;
 
     /**
      * ElevatorController constructor.
-     * @param Elevator $elevator
+     * @param array $elevators
+     * @param ElevatorRequests $requests
+     * @internal param Elevator $elevator
      */
-    public function __construct(Elevator $elevator)
+    public function __construct(Array $elevators, ElevatorRequests $requests)
     {
-        $this->elevator = $elevator;
+        foreach($elevators as $elevator) {
+            $elevator->setCurrentFloor(0);
+        }
+
+        $this->elevators = $elevators;
+        $this->requests = $requests;
     }
 
     public function startUp()
     {
-
+        $this->requests->nextRequest();
     }
 
     public function shutDown()
