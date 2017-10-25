@@ -18,4 +18,30 @@ class ElevatorRequest
 
         $this->requestTime = time();
     }
+
+    /**
+     * @return int
+     */
+    public function getRequestTime()
+    {
+        return $this->requestTime;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFloor()
+    {
+        return $this->floor;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDirection()
+    {
+        return $this->direction;
+    }
+
+
 }

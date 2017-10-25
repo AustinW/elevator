@@ -24,10 +24,7 @@ class ElevatorRequests
             return null;
         }
 
-        $request = $this->requests[0];
-        $this->requests = array_shift($this->requests);
-
-        return $request;
+        return array_shift($this->requests);
     }
 
     /**
@@ -45,6 +42,14 @@ class ElevatorRequests
     public function setRequests($requests)
     {
         $this->requests = $requests;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEmpty()
+    {
+        return empty($this->requests);
     }
 
 
