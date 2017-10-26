@@ -2,80 +2,153 @@
 
 namespace AustinW\Elevator;
 
+use AustinW\Elevator\Button\FloorButton;
+
 class ElevatorController
 {
     protected $elevators;
 
-    protected $requests;
+    protected $status;
+
+    protected $pickupLocations = [];
+
+    protected $floors = [];
 
     /**
      * ElevatorController constructor.
      * @param array $elevators
-     * @param ElevatorRequests $requests
-     * @internal param Elevator $elevator
+     * @param array|null $floors
      */
-    public function __construct(Array $elevators, ElevatorRequests $requests)
+    public function __construct(Array $elevators, Array $floors = null)
     {
         foreach($elevators as $elevator) {
-            $elevator->setCurrentFloor(0);
+            $elevator->setCurrentFloor(Elevator::MIN_FLOOR);
         }
 
         $this->elevators = $elevators;
-        $this->requests = $requests;
+
+        if ($floors) {
+            $this->setFloors($floors);
+        }
     }
 
     public function startUp()
     {
-        while(!$this->requests->isEmpty()) {
-            $request = $this->requests->nextRequest();
-
-            $this->processRequest($request);
-        }
+        $this->status = 'ON';
     }
 
     public function shutDown()
     {
-
+        $this->status = 'OFF';
     }
 
-    public function processRequest(ElevatorRequest $request)
+    public function pickUp(ElevatorRequest $request)
     {
-        $served = false;
+        $this->pickupLocations[] = $request;
+    }
 
-        // if available pick a standing elevator for this floor.
-        foreach ($this->elevators as $elevator) {
+    public function destination($elevatorId, $destination)
+    {
+        $this->elevators[$elevatorId]->addNewDestination($destination);
+    }
 
-            /** @var Elevator $elevator */
-            if ($elevator->isStanding() && $elevator->getCurrentFloor() === $request->getFloor()) {
-                $elevator->moveTo($request);
-                $served = true;
+    public function step()
+    {
+        // Loop through each elevator
+
+        foreach ($this->elevators as $key => $elevator) {
+            /* @var Elevator $elevator */
+            // Algorithm
+            switch ($elevator->status()) {
+                case 'EMPTY':
+                    if (!empty($this->pickupLocations)) {
+                        $elevator->addNewDestination(array_shift($this->pickupLocations));
+                    }
+                    break;
+
+                case 'OCCUPIED':
+                    switch ($elevator->direction()) {
+                        case 'UP':
+                            $elevator->moveUp();
+                            break;
+                        case 'DOWN':
+                            $elevator->moveDown();
+                            break;
+                        case 'HOLD':
+                            $elevator->popDestination();
+                            $elevator->openDoor();
+                            break;
+                    }
+
+                    if ($elevator->direction() === 'UP') {
+                        break;
+                    }
             }
         }
+    }
 
-        // else pick an elevator moving to this floor.
-        if (!$served) {
-            foreach ($this->elevators as $elevator) {
+    /**
+     * @return array
+     */
+    public function getFloors()
+    {
+        return $this->floors;
+    }
 
-                /** @var Elevator $elevator */
-                if (!$served && $request->getFloor() > $elevator->getCurrentFloor() && $elevator->isMoving('UP') && $elevator->getMovingTo() >= $request->getFloor()) {
-                    echo 'on the way';
-                }
-            }
-        }
+    /**
+     * @param array $floors
+     */
+    public function setFloors($floors)
+    {
+        $this->floors = $floors;
+    }
 
-        if (!$served) {
-            foreach ($this->elevators as $elevator) {
+//    public function processRequest(ElevatorRequest $request)
+//    {
+//        $served = false;
+//
+//        // if available pick a standing elevator for this floor.
+//        foreach ($this->elevators as $elevator) {
+//
+//            /** @var Elevator $elevator */
+//            if ($elevator->isStanding() && $elevator->getCurrentFloor() === $request->getFloor()) {
+//                $elevator->moveTo($request);
+//                $served = true;
+//            }
+//        }
+//
+//        // else pick an elevator moving to this floor.
+//        if (!$served) {
+//            foreach ($this->elevators as $elevator) {
+//
+//                /** @var Elevator $elevator */
+//                if (!$served && $request->getFloor() > $elevator->getCurrentFloor() && $elevator->isMoving('UP') && $elevator->getMovingTo() >= $request->getFloor()) {
+//                    echo 'on the way';
+//                }
+//            }
+//        }
+//
+//        if (!$served) {
+//            foreach ($this->elevators as $elevator) {
+//
+//                /** @var Elevator $elevator */
+//                if (!$served && $elevator->isStanding()) {
+//                    $elevator->moveTo($request);
+//                    $served = true;
+//                }
+//            }
+//        }
+//
+//
+//        // else pick a standing elevator on another floor.
+//
+//    }
 
-                /** @var Elevator $elevator */
-                if (!$served && $elevator->isStanding()) {
-                    $elevator->moveTo($request);
-                    $served = true;
-                }
-            }
-        }
-
-
-        // else pick a standing elevator on another floor.
-
+    /**
+     * @return array
+     */
+    public function getElevators()
+    {
+        return $this->elevators;
     }
 }

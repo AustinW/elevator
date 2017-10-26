@@ -8,13 +8,9 @@ class ElevatorRequest
 
     protected $floor;
 
-    protected $direction;
-
-    public function __construct($floor, $direction)
+    public function __construct($floor)
     {
         $this->floor = $floor;
-
-        $this->direction = $direction;
 
         $this->requestTime = time();
     }
@@ -34,14 +30,4 @@ class ElevatorRequest
     {
         return $this->floor;
     }
-
-    /**
-     * @return mixed
-     */
-    public function getDirection()
-    {
-        return $this->direction;
-    }
-
-
 }

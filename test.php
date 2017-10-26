@@ -4,35 +4,30 @@ require_once 'bootstrap.php';
 
 use AustinW\Elevator\Elevator;
 use AustinW\Elevator\ElevatorController;
-use AustinW\Elevator\ElevatorRequests;
-use AustinW\Elevator\SchedulingAlgorithm;
 use AustinW\Elevator\Button\FloorButton;
+use AustinW\Elevator\ElevatorFloor;
+use AustinW\Elevator\ElevatorRequest;
+
 
 $elevators = [
     new Elevator('Elevator 1'),
     new Elevator('Elevator 2')
 ];
 
-$requests = new ElevatorRequests(new SchedulingAlgorithm());
-$controller = new ElevatorController($elevators, $requests);
 
-$groundFloor = new FloorButton($requests, 0);
-$firstFloor = new FloorButton($requests, 1);
-$secondFloor = new FloorButton($requests, 2);
-$thirdFloor = new FloorButton($requests, 3);
-$fourthFloor = new FloorButton($requests, 4);
-$fifthFloor = new FloorButton($requests, 5);
-$sixthFloor = new FloorButton($requests, 6);
-$seventhFloor = new FloorButton($requests, 7);
-$eighthFloor = new FloorButton($requests, 8);
-$ninthFloor = new FloorButton($requests, 9);
-$tenthFloor = new FloorButton($requests, 10);
+$elevatorControlSystem = new ElevatorController($elevators);
 
-//$elevator->moveUp(5);
-//$elevator->moveDown(2);
+$floors = [];
+for ($i = Elevator::MIN_FLOOR; $i <= Elevator::MAX_FLOOR; $i++) {
+    $floors[$i] = new ElevatorFloor($elevatorControlSystem, $i);
+}
 
-$controller->startUp();
+$elevatorControlSystem->setFloors($floors);
+$elevatorControlSystem->startUp();
 
-$tenthFloor->makeRequest('UP');
-$secondFloor->makeRequest('UP');
+$elevatorControlSystem->pickUp(new ElevatorRequest(10));
+$elevatorControlSystem->pickUp(new ElevatorRequest(7));
 
+for ($i = 0; $i <= 10; $i++) {
+    $elevatorControlSystem->step();
+}

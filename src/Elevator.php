@@ -2,12 +2,14 @@
 
 namespace AustinW\Elevator;
 
-class Elevator implements ElevatorStateInterface
+use AustinW\Elevator\Button\ElevatorButton;
+
+class Elevator
 {
-    const MIN_FLOOR = 0;
+    const MIN_FLOOR = 1;
     const MAX_FLOOR = 11;
-    const SPEED = 1; // seconds to move between floors
-    const OPEN_CLOSE = 5; // seconds for doors to open and close
+    const SPEED = 0; // seconds to move between floors
+    const OPEN_CLOSE = 0; // seconds for doors to open and close
 
     protected $currentFloor;
 
@@ -15,117 +17,80 @@ class Elevator implements ElevatorStateInterface
 
     protected $validStates = ['UP', 'DOWN', 'STAND', 'MAINTENANCE'];
 
-    protected $floorRequests = [];
+    protected $buttons = [];
 
-    protected $signals;
-
-    protected $movingTo;
+    protected $destinationFloors = [];
 
     protected $name;
 
     public function __construct($name = '')
     {
-        $this->state = 'STAND';
         $this->name = $name;
+
+        for ($i = self::MIN_FLOOR; $i <= self::MAX_FLOOR; $i++) {
+            $this->buttons[$i] = new ElevatorButton($this, $i);
+        }
     }
 
     public function openDoor()
     {
-        log_msg(sprintf('Opening the door at floor %d...', $this->currentFloor));
+        log_msg(sprintf('[%s] Opening the door...', $this->getName()));
         sleep(self::OPEN_CLOSE);
         $this->closeDoor();
     }
 
     public function closeDoor()
     {
-        log_msg('Closing the door...');
+        log_msg(sprintf('[%s] Closing the door...', $this->getName()));
     }
 
-    protected function moveUp()
+    public function moveUp() {
+        log_msg(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor + 1));
+        sleep(self::SPEED);
+        return $this->currentFloor++;
+    }
+
+    public function moveDown() {
+        log_msg(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor - 1));
+        sleep(self::SPEED);
+        return $this->currentFloor--;
+    }
+
+    /**
+     * @return ElevatorRequest|null
+     */
+    public function nextDestination()
     {
-        log_msg('Going up...');
+        return (!empty($this->destinationFloors))
+            ? $this->destinationFloors[0]
+            : null;
+    }
 
-        $this->setState('UP');
-        $this->setMovingTo($this->floorRequests[count($this->floorRequests) - 1]->getFloor());
+    public function addNewDestination(ElevatorRequest $destination)
+    {
+        $this->destinationFloors[] = $destination;
+    }
 
-        var_dump($this->floorRequests);
+    public function popDestination() {
+        return array_shift($this->destinationFloors);
+    }
 
-        while (!empty($this->floorRequests) && $this->currentFloor < self::MAX_FLOOR) {
-            $targetFloor = $this->floorRequests[0];
-            $this->currentFloor++;
-            sleep(self::SPEED);
-            log_msg(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor));
-
-            if ($targetFloor->getFloor() === $this->currentFloor) {
-                array_shift($this->floorRequests);
-                $this->openDoor();
+    public function direction()
+    {
+        if (count($this->destinationFloors) > 0) {
+            if ($this->currentFloor < $this->nextDestination()->getFloor()) {
+                return 'UP';
+            } else if ($this->currentFloor > $this->nextDestination()->getFloor()) {
+                return 'DOWN';
             }
         }
 
-        $this->setState('STAND');
-
-        return $this->currentFloor;
+        return 'HOLD';
     }
 
-    protected function moveDown()
+    public function status()
     {
-        log_msg('Going down...');
-
-        $this->setState('DOWN');
-        $this->setMovingTo($this->floorRequests[0]->getFloor());
-
-        while (!empty($this->floorRequests) && $this->currentFloor > 0) {
-            $targetFloor = $this->floorRequests[count($this->floorRequests) - 1];
-            $this->currentFloor--;
-            sleep(self::SPEED);
-            log_msg(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor));
-
-            if ($targetFloor->getFloor() === $this->currentFloor) {
-                array_pop($this->floorRequests);
-                $this->openDoor();
-            }
-        }
-
-        $this->setState('STAND');
-
-        return $this->currentFloor;
-    }
-
-    public function moveTo(ElevatorRequest $request)
-    {
-        $direction = ($request->getFloor() > $this->getCurrentFloor()) ? 'UP' : 'DOWN';
-
-        $this->floorRequests[] = $request;
-
-        if ($direction === 'UP') {
-            usort($this->floorRequests, function(ElevatorRequest $a, ElevatorRequest $b) {
-                if ($a->getFloor() == $b->getFloor()) {
-                    return 0;
-                }
-                return ($a->getFloor() < $b->getFloor()) ? -1 : 1;
-            });
-        } else if ($direction === 'DOWN') {
-            usort($this->floorRequests, function(ElevatorRequest $a, ElevatorRequest $b) {
-                if ($a->getFloor() == $b->getFloor()) {
-                    return 0;
-                }
-                return ($a->getFloor() > $b->getFloor()) ? -1 : 1;
-            });
-        }
-
-        $this->moveUp();
-    }
-
-    public function queueMove(ElevatorRequest $request, $direction)
-    {
-
-    }
-
-    public function setSignal($signal)
-    {
-        if (in_array($signal, $this->signals)) {
-            $this->signal = $signal;
-        }
+        return (count($this->destinationFloors) > 0) ? 'OCCUPIED' : 'EMPTY';
     }
 
     /**
@@ -147,51 +112,8 @@ class Elevator implements ElevatorStateInterface
     /**
      * @return string
      */
-    public function getState()
+    public function getName()
     {
-        return $this->state;
-    }
-
-    public function isStanding()
-    {
-        return $this->state === 'STAND';
-    }
-
-    public function isMoving($direction = null)
-    {
-        if ($direction) {
-            return $this->state === strtoupper($direction);
-        } else {
-            return $this->state === 'UP' || $this->state === 'DOWN';
-        }
-    }
-
-    /**
-     * @param string $state
-     * @throws \Exception
-     */
-    public function setState($state)
-    {
-        if (in_array($state, $this->validStates)) {
-            $this->state = $state;
-        } else {
-            throw new \Exception('Could not interpret the assignment of state: "' . $state . '"');
-        }
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getMovingTo()
-    {
-        return $this->movingTo;
-    }
-
-    /**
-     * @param mixed $movingTo
-     */
-    public function setMovingTo($movingTo)
-    {
-        $this->movingTo = $movingTo;
+        return $this->name;
     }
 }

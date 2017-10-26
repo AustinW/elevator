@@ -4,34 +4,31 @@ namespace AustinW\Elevator\Button;
 
 use AustinW\Elevator\Elevator;
 use AustinW\Elevator\ElevatorRequest;
-use AustinW\Elevator\ElevatorRequests;
 
 class ElevatorButton
 {
-    protected $elevatorRequests;
-
     protected $elevator;
+
+    protected $floor;
 
     /**
      * ElevatorButton constructor.
-     * @param ElevatorRequests $elevatorRequests
      * @param Elevator $elevator
+     * @param $floor
      */
-    public function __construct(ElevatorRequests $elevatorRequests, Elevator $elevator)
+    public function __construct(Elevator $elevator, $floor)
     {
-        $this->elevatorRequests = $elevatorRequests;
         $this->elevator = $elevator;
+        $this->floor = $floor;
     }
 
     /**
-     * @param $floor
-     * @param $direction
      */
-    public function makeRequest($direction, $floor)
+    public function press()
     {
-        $request = new ElevatorRequest($floor, $direction);
+        $request = new ElevatorRequest($this->floor);
 
-        $this->elevatorRequests->addRequest($request);
+        $this->elevator->addNewDestination($request);
     }
 
     /**
@@ -40,5 +37,13 @@ class ElevatorButton
     public function getElevator()
     {
         return $this->elevator;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFloor()
+    {
+        return $this->floor;
     }
 }
