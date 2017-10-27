@@ -23,6 +23,9 @@ class Elevator
 
     protected $name;
 
+    /** @var \Monolog\Logger $logger */
+    private $logger;
+
     public function __construct($name = '')
     {
         $this->name = $name;
@@ -30,28 +33,32 @@ class Elevator
         for ($i = self::MIN_FLOOR; $i <= self::MAX_FLOOR; $i++) {
             $this->buttons[$i] = new ElevatorButton($this, $i);
         }
+
+        $elevatorLog = new ElevatorLog();
+        $elevatorLog->setNoLog();
+        $this->logger = $elevatorLog->getLogger();
     }
 
     public function openDoor()
     {
-        log_msg(sprintf('[%s] Opening the door...', $this->getName()));
+        $this->logger->addInfo(sprintf('[%s] Opening the door...', $this->getName()));
         sleep(self::OPEN_CLOSE);
         $this->closeDoor();
     }
 
     public function closeDoor()
     {
-        log_msg(sprintf('[%s] Closing the door...', $this->getName()));
+        $this->logger->addInfo(sprintf('[%s] Closing the door...', $this->getName()));
     }
 
     public function moveUp() {
-        log_msg(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor + 1));
+        $this->logger->addInfo(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor + 1));
         sleep(self::SPEED);
         return $this->currentFloor++;
     }
 
     public function moveDown() {
-        log_msg(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor - 1));
+        $this->logger->addInfo(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor - 1));
         sleep(self::SPEED);
         return $this->currentFloor--;
     }

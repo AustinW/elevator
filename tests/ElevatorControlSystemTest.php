@@ -33,8 +33,8 @@ class ElevatorControlSystemTest extends TestCase
 
     public function testRequestingTwoElevators()
     {
-        $this->elevatorController->pickUp(new ElevatorRequest(10));
-        $this->elevatorController->pickUp(new ElevatorRequest(7));
+        $this->elevatorController->pickUp(new ElevatorRequest(10, 'DOWN'));
+        $this->elevatorController->pickUp(new ElevatorRequest(7, 'UP'));
 
         for ($i = Elevator::MIN_FLOOR; $i <= 10; $i++) {
             $this->elevatorController->step();
@@ -48,8 +48,8 @@ class ElevatorControlSystemTest extends TestCase
 
     public function testSendingElevatorToMultipleDestinations()
     {
-        $this->elevatorController->destination(0, new ElevatorRequest(10));
-        $this->elevatorController->destination(0, new ElevatorRequest(7));
+        $this->elevatorController->destination(0, new ElevatorRequest(10, 'UP'));
+        $this->elevatorController->destination(0, new ElevatorRequest(7, 'UP'));
 
         for ($i = 0; $i < 10; $i++) {
             $this->elevatorController->step();
@@ -68,7 +68,7 @@ class ElevatorControlSystemTest extends TestCase
 
     public function testSendingElevatorToDestination()
     {
-        $this->elevatorController->destination(0, new ElevatorRequest(10));
+        $this->elevatorController->destination(0, new ElevatorRequest(10, 'UP'));
         for ($i = 0; $i < 10; $i++) {
             $this->elevatorController->step();
         }
@@ -84,9 +84,14 @@ class ElevatorControlSystemTest extends TestCase
         $this->elevatorController->getFloor(2)->closeForMaintenance();
         $this->elevatorController->getFloor(4)->closeForMaintenance();
 
-        $this->elevatorController->destination(0, new ElevatorRequest(2));
-        $this->elevatorController->destination(0, new ElevatorRequest(4));
+        $this->elevatorController->destination(0, new ElevatorRequest(2, 'UP'));
+        $this->elevatorController->destination(0, new ElevatorRequest(4, 'UP'));
 
+    }
+
+    public function testPickUpOnTheWay()
+    {
+        $this->elevatorScheduler->pickUp(new ElevatorFloor($this->elevatorController, 10));
     }
 
     public function tearDown()

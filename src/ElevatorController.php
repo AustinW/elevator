@@ -61,6 +61,15 @@ class ElevatorController
     {
         // Loop through each elevator
 
+        // if available pick a standing elevator for this floor.
+
+
+        // else pick an elevator moving to this floor.
+
+
+        // else pick a standing elevator on another floor.
+
+
         foreach ($this->elevators as $key => $elevator) {
             /* @var Elevator $elevator */
             // Algorithm

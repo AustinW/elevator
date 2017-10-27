@@ -30,6 +30,7 @@ class ElevatorFloor
 
     public function requestPickup()
     {
+        // Should fire an event, not be tied to ElevatorController
         $this->elevatorController->pickUp($this->floor);
     }
 
