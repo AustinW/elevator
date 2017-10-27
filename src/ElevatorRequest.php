@@ -10,6 +10,11 @@ class ElevatorRequest
 
     protected $direction;
 
+    /**
+     * ElevatorRequest constructor.
+     * @param $floor
+     * @param $direction
+     */
     public function __construct($floor, $direction)
     {
         $this->requestTime = time();
@@ -31,6 +36,15 @@ class ElevatorRequest
     public function getFloor()
     {
         return $this->floor;
+    }
+
+    /**
+     * @param $direction
+     * @return bool
+     */
+    public function isDirection($direction)
+    {
+        return $this->direction === $direction;
     }
 
     /**

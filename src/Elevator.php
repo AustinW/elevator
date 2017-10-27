@@ -3,6 +3,7 @@
 namespace AustinW\Elevator;
 
 use AustinW\Elevator\Button\ElevatorButton;
+use AustinW\Elevator\Exception\ElevatorAlarmException;
 
 class Elevator
 {
@@ -13,9 +14,7 @@ class Elevator
 
     protected $currentFloor;
 
-    protected $state;
-
-    protected $validStates = ['UP', 'DOWN', 'STAND', 'MAINTENANCE'];
+    protected $state = '';
 
     protected $buttons = [];
 
@@ -23,9 +22,13 @@ class Elevator
 
     protected $name;
 
-    /** @var \Monolog\Logger $logger */
+    /* @var \Monolog\Logger $logger */
     private $logger;
 
+    /**
+     * Elevator constructor.
+     * @param string $name
+     */
     public function __construct($name = '')
     {
         $this->name = $name;
@@ -35,10 +38,13 @@ class Elevator
         }
 
         $elevatorLog = new ElevatorLog();
-        $elevatorLog->setNoLog();
+        $elevatorLog->setTerminalOutput();
         $this->logger = $elevatorLog->getLogger();
     }
 
+    /**
+     *
+     */
     public function openDoor()
     {
         $this->logger->addInfo(sprintf('[%s] Opening the door...', $this->getName()));
@@ -46,17 +52,26 @@ class Elevator
         $this->closeDoor();
     }
 
+    /**
+     *
+     */
     public function closeDoor()
     {
         $this->logger->addInfo(sprintf('[%s] Closing the door...', $this->getName()));
     }
 
+    /**
+     * @return int
+     */
     public function moveUp() {
         $this->logger->addInfo(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor + 1));
         sleep(self::SPEED);
         return $this->currentFloor++;
     }
 
+    /**
+     * @return int
+     */
     public function moveDown() {
         $this->logger->addInfo(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor - 1));
         sleep(self::SPEED);
@@ -73,15 +88,47 @@ class Elevator
             : null;
     }
 
+    /**
+     * @param ElevatorRequest $destination
+     */
     public function addNewDestination(ElevatorRequest $destination)
     {
         $this->destinationFloors[] = $destination;
+
+        if ($destination->isDirection('UP')) {
+            sort($this->destinationFloors);
+        } else {
+            rsort($this->destinationFloors);
+        }
     }
 
+    /**
+     * @return mixed
+     */
     public function popDestination() {
         return array_shift($this->destinationFloors);
     }
 
+    /**
+     * @param null|string $direction
+     * @return null|string
+     */
+    public function destinationDirection($direction = null)
+    {
+        if (count($this->destinationFloors) > 0) {
+            if ($direction) {
+                return $this->nextDestination()->getDirection() === $direction;
+            } else {
+                return $this->nextDestination()->getDirection();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return string
+     */
     public function direction()
     {
         if (count($this->destinationFloors) > 0) {
@@ -89,15 +136,56 @@ class Elevator
                 return 'UP';
             } else if ($this->currentFloor > $this->nextDestination()->getFloor()) {
                 return 'DOWN';
+            } else {
+                // current floor == destination->floor
+                return 'HOLD';
             }
         }
 
         return 'HOLD';
     }
 
+    /**
+     * @return mixed
+     */
+    public function highestDestination()
+    {
+        return max(array_map(function(ElevatorRequest $floor) {
+            return $floor->getFloor();
+        }, $this->destinationFloors));
+    }
+
+    /**
+     * @return mixed
+     */
+    public function lowestDestination()
+    {
+        return min(array_map(function(ElevatorRequest $floor) {
+            return $floor->getFloor();
+        }, $this->destinationFloors));
+    }
+
+    /**
+     * @return string
+     * @throws ElevatorAlarmException
+     */
     public function status()
     {
+        if ($this->state === 'ALARM') {
+            throw new ElevatorAlarmException('Elevator alarm is sounding. Movement halted.');
+        }
+
         return (count($this->destinationFloors) > 0) ? 'OCCUPIED' : 'EMPTY';
+    }
+
+    public function isEmpty()
+    {
+        return $this->status() === 'EMPTY';
+    }
+
+    public function isOccupied()
+    {
+        return ! $this->isEmpty();
     }
 
     /**
@@ -123,4 +211,18 @@ class Elevator
     {
         return $this->name;
     }
+
+    /**
+     * @return array
+     */
+    public function getDestinations()
+    {
+        return $this->destinationFloors;
+    }
+
+    public function soundAlarm()
+    {
+        $this->state = 'ALARM';
+    }
+
 }

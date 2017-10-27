@@ -3,17 +3,23 @@
 namespace AustinW\Elevator;
 
 use AustinW\Elevator\Button\FloorButton;
+use AustinW\Elevator\Exception\ElevatorShutOffException;
 use AustinW\Elevator\Exception\UnderMaintenanceException;
 
 class ElevatorController
 {
+    /* @var array $elevators */
     protected $elevators;
+
 
     protected $status;
 
     protected $pickupLocations = [];
 
     protected $floors = [];
+
+    /* @var \Monolog\Logger $logger */
+    private $logger;
 
     /**
      * ElevatorController constructor.
@@ -31,55 +37,75 @@ class ElevatorController
         if ($floors) {
             $this->setFloors($floors);
         }
+
+        $elevatorLog = new ElevatorLog();
+        $elevatorLog->setTerminalOutput();
+        $this->logger = $elevatorLog->getLogger();
     }
 
+    /**
+     * Start the elevator up
+     */
     public function startUp()
     {
         $this->status = 'ON';
     }
 
+    /**
+     * Shut the elevator down
+     */
     public function shutDown()
     {
         $this->status = 'OFF';
     }
 
+    /**
+     * @param ElevatorRequest $request
+     * @throws ElevatorShutOffException
+     */
     public function pickUp(ElevatorRequest $request)
     {
+        if ($this->status === 'OFF') {
+            throw new ElevatorShutOffException('Elevator cannot serve requests when the system is shut off');
+        }
+
         $this->pickupLocations[] = $request;
     }
 
+    /**
+     * @param $elevatorId
+     * @param ElevatorRequest $destination
+     * @throws ElevatorShutOffException
+     * @throws UnderMaintenanceException
+     */
     public function destination($elevatorId, ElevatorRequest $destination)
     {
         if ($this->checkForMaintenance($destination->getFloor())) {
             throw new UnderMaintenanceException('Floor is under maintenance and cannot be reached');
         }
 
+        if ($this->status === 'OFF') {
+            throw new ElevatorShutOffException('Elevator cannot serve requests when the system is shut off');
+        }
+
         $this->elevators[$elevatorId]->addNewDestination($destination);
     }
 
+    /**
+     * Main elevator controller driver
+     */
     public function step()
     {
+        if ($this->status === 'OFF') {
+            throw new ElevatorShutOffException('Cannot serve elevator requests while the elevator is shut off.');
+        }
+
+        $this->delegatePickUps();
+
         // Loop through each elevator
-
-        // if available pick a standing elevator for this floor.
-
-
-        // else pick an elevator moving to this floor.
-
-
-        // else pick a standing elevator on another floor.
-
-
         foreach ($this->elevators as $key => $elevator) {
             /* @var Elevator $elevator */
-            // Algorithm
             switch ($elevator->status()) {
-                case 'EMPTY':
-                    if (!empty($this->pickupLocations)) {
-                        $elevator->addNewDestination(array_shift($this->pickupLocations));
-                    }
-                    break;
-
                 case 'OCCUPIED':
                     switch ($elevator->direction()) {
                         case 'UP':
@@ -95,14 +121,81 @@ class ElevatorController
                             $elevator->openDoor();
                             break;
                     }
-
-                    if ($elevator->direction() === 'UP') {
-                        break;
-                    }
             }
         }
     }
 
+    /**
+     * Send pickup requests to the appropriate elevator
+     */
+    protected function delegatePickUps()
+    {
+        while (!empty($this->pickupLocations)) {
+            // decide which elevator to use to pickup
+
+            /* @var ElevatorRequest $pickupLocation */
+            $pickupLocation = $this->pickupLocations[0];
+            $pickupLocationServed = false;
+
+            foreach ($this->elevators as $key => $elevator) {
+                /* @var Elevator $elevator */
+
+                if (!$pickupLocationServed) {
+                    if ($elevator->getCurrentFloor() === $pickupLocation->getFloor() && $elevator->isEmpty()) {
+                        $this->logger->addInfo(sprintf('[%s] Adding pickup location on floor %d for elevator already at floor %d', $elevator->getName(), $pickupLocation->getFloor(), $elevator->getCurrentFloor()));
+                        $elevator->addNewDestination($pickupLocation);
+                        array_shift($this->pickupLocations);
+                        $pickupLocationServed = true;
+                    } else if ($this->_elevatorOnTheWay('UP', $elevator, $pickupLocation)) {
+                        $this->logger->addInfo(sprintf('[%s] Adding pickup location on floor %d for elevator on the way UP at currently at floor %d', $elevator->getName(), $pickupLocation->getFloor(), $elevator->getCurrentFloor()));
+                        $elevator->addNewDestination($pickupLocation);
+                        array_shift($this->pickupLocations);
+                        $pickupLocationServed = true;
+                    } else if ($this->_elevatorOnTheWay('DOWN', $elevator, $pickupLocation)) {
+                        $this->logger->addInfo(sprintf('[%s] Adding pickup location on floor %d for elevator on the way DOWN at currently at floor %d', $elevator->getName(), $pickupLocation->getFloor(), $elevator->getCurrentFloor()));
+                        $elevator->addNewDestination($pickupLocation);
+                        array_shift($this->pickupLocations);
+                        $pickupLocationServed = true;
+                    } else if ($elevator->status() === 'EMPTY') {
+                        $this->logger->addInfo(sprintf('[%s] Adding pickup location on floor %d for elevator sitting at floor %d', $elevator->getName(), $pickupLocation->getFloor(), $elevator->getCurrentFloor()));
+                        $elevator->addNewDestination($pickupLocation);
+                        array_shift($this->pickupLocations);
+                        $pickupLocationServed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param $direction
+     * @param Elevator $elevator
+     * @param ElevatorRequest $pickupLocation
+     * @return bool
+     */
+    private function _elevatorOnTheWay($direction, Elevator $elevator, ElevatorRequest $pickupLocation)
+    {
+        if ($direction === 'UP') {
+            return
+                $elevator->isOccupied() &&
+                $elevator->getCurrentFloor() < $pickupLocation->getFloor() &&
+                $elevator->highestDestination() >= $pickupLocation->getFloor() &&
+                $pickupLocation->isDirection('UP') &&
+                $elevator->destinationDirection('UP');
+        } else {
+            return
+                $elevator->isOccupied() &&
+                $elevator->getCurrentFloor() > $pickupLocation->getFloor() &&
+                $elevator->lowestDestination() <= $pickupLocation->getFloor() &&
+                $pickupLocation->isDirection('DOWN') &&
+                $elevator->destinationDirection('DOWN');
+        }
+    }
+
+    /**
+     * @param $floorNumber
+     * @return bool
+     */
     public function checkForMaintenance($floorNumber)
     {
         return $this->getFloor($floorNumber)->underMaintenance();
@@ -132,47 +225,6 @@ class ElevatorController
     {
         $this->floors = $floors;
     }
-
-//    public function processRequest(ElevatorRequest $request)
-//    {
-//        $served = false;
-//
-//        // if available pick a standing elevator for this floor.
-//        foreach ($this->elevators as $elevator) {
-//
-//            /** @var Elevator $elevator */
-//            if ($elevator->isStanding() && $elevator->getCurrentFloor() === $request->getFloor()) {
-//                $elevator->moveTo($request);
-//                $served = true;
-//            }
-//        }
-//
-//        // else pick an elevator moving to this floor.
-//        if (!$served) {
-//            foreach ($this->elevators as $elevator) {
-//
-//                /** @var Elevator $elevator */
-//                if (!$served && $request->getFloor() > $elevator->getCurrentFloor() && $elevator->isMoving('UP') && $elevator->getMovingTo() >= $request->getFloor()) {
-//                    echo 'on the way';
-//                }
-//            }
-//        }
-//
-//        if (!$served) {
-//            foreach ($this->elevators as $elevator) {
-//
-//                /** @var Elevator $elevator */
-//                if (!$served && $elevator->isStanding()) {
-//                    $elevator->moveTo($request);
-//                    $served = true;
-//                }
-//            }
-//        }
-//
-//
-//        // else pick a standing elevator on another floor.
-//
-//    }
 
     /**
      * @return array
