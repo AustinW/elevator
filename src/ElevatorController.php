@@ -3,6 +3,7 @@
 namespace AustinW\Elevator;
 
 use AustinW\Elevator\Button\FloorButton;
+use AustinW\Elevator\Exception\UnderMaintenanceException;
 
 class ElevatorController
 {
@@ -47,8 +48,12 @@ class ElevatorController
         $this->pickupLocations[] = $request;
     }
 
-    public function destination($elevatorId, $destination)
+    public function destination($elevatorId, ElevatorRequest $destination)
     {
+        if ($this->checkForMaintenance($destination->getFloor())) {
+            throw new UnderMaintenanceException('Floor is under maintenance and cannot be reached');
+        }
+
         $this->elevators[$elevatorId]->addNewDestination($destination);
     }
 
@@ -69,12 +74,14 @@ class ElevatorController
                 case 'OCCUPIED':
                     switch ($elevator->direction()) {
                         case 'UP':
+                            $this->checkForMaintenance($elevator->getCurrentFloor() + 1);
                             $elevator->moveUp();
                             break;
                         case 'DOWN':
                             $elevator->moveDown();
                             break;
                         case 'HOLD':
+                            $this->checkForMaintenance($elevator->getCurrentFloor() + 1);
                             $elevator->popDestination();
                             $elevator->openDoor();
                             break;
@@ -85,6 +92,20 @@ class ElevatorController
                     }
             }
         }
+    }
+
+    public function checkForMaintenance($floorNumber)
+    {
+        return $this->getFloor($floorNumber)->underMaintenance();
+    }
+
+    /**
+     * @param int $index
+     * @return ElevatorFloor
+     */
+    public function getFloor($index)
+    {
+        return $this->floors[$index];
     }
 
     /**

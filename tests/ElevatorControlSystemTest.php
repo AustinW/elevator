@@ -4,10 +4,12 @@ use AustinW\Elevator\Elevator;
 use AustinW\Elevator\ElevatorController;
 use AustinW\Elevator\ElevatorFloor;
 use AustinW\Elevator\ElevatorRequest;
+use AustinW\Elevator\Exception\UnderMaintenanceException;
 use PHPUnit\Framework\TestCase;
 
 class ElevatorControlSystemTest extends TestCase
 {
+    /** @var ElevatorController $elevatorController */
     protected $elevatorController;
 
     public function setUp()
@@ -27,13 +29,6 @@ class ElevatorControlSystemTest extends TestCase
         $this->elevatorController->setFloors($floors);
 
         $this->elevatorController->startUp();
-
-        $this->elevatorController->pickUp(new ElevatorRequest(10));
-        $this->elevatorController->pickUp(new ElevatorRequest(7));
-
-        for ($i = 0; $i <= 10; $i++) {
-            $this->elevatorController->step();
-        }
     }
 
     public function testRequestingTwoElevators()
@@ -41,7 +36,7 @@ class ElevatorControlSystemTest extends TestCase
         $this->elevatorController->pickUp(new ElevatorRequest(10));
         $this->elevatorController->pickUp(new ElevatorRequest(7));
 
-        for ($i = 0; $i <= 10; $i++) {
+        for ($i = Elevator::MIN_FLOOR; $i <= 10; $i++) {
             $this->elevatorController->step();
         }
 
@@ -56,13 +51,14 @@ class ElevatorControlSystemTest extends TestCase
         $this->elevatorController->destination(0, new ElevatorRequest(10));
         $this->elevatorController->destination(0, new ElevatorRequest(7));
 
-        for ($i = 0; $i <= 10; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $this->elevatorController->step();
         }
 
         $elevators = $this->elevatorController->getElevators();
         $this->assertEquals(10, $elevators[0]->getCurrentFloor());
-        for ($i = 0; $i <= 10 - 7; $i++) {
+
+        for ($i = 0; $i < 10 - 7; $i++) {
             $this->elevatorController->step();
         }
 
@@ -73,12 +69,24 @@ class ElevatorControlSystemTest extends TestCase
     public function testSendingElevatorToDestination()
     {
         $this->elevatorController->destination(0, new ElevatorRequest(10));
-        for($i = 0; $i <= 10; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $this->elevatorController->step();
         }
 
         $elevators = $this->elevatorController->getElevators();
         $this->assertEquals(10, $elevators[0]->getCurrentFloor());
+    }
+
+    public function testFloorUnderMaintenance()
+    {
+        $this->expectException(UnderMaintenanceException::class);
+
+        $this->elevatorController->getFloor(2)->closeForMaintenance();
+        $this->elevatorController->getFloor(4)->closeForMaintenance();
+
+        $this->elevatorController->destination(0, new ElevatorRequest(2));
+        $this->elevatorController->destination(0, new ElevatorRequest(4));
+
     }
 
     public function tearDown()
