@@ -42,9 +42,7 @@ class Elevator
         $this->logger = $elevatorLog->getLogger();
     }
 
-    /**
-     *
-     */
+    
     public function openDoor()
     {
         $this->logger->addInfo(sprintf('[%s] Opening the door...', $this->getName()));
@@ -52,9 +50,7 @@ class Elevator
         $this->closeDoor();
     }
 
-    /**
-     *
-     */
+    
     public function closeDoor()
     {
         $this->logger->addInfo(sprintf('[%s] Closing the door...', $this->getName()));
@@ -63,7 +59,8 @@ class Elevator
     /**
      * @return int
      */
-    public function moveUp() {
+    public function moveUp()
+    {
         $this->logger->addInfo(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor + 1));
         sleep(self::SPEED);
         return $this->currentFloor++;
@@ -72,7 +69,8 @@ class Elevator
     /**
      * @return int
      */
-    public function moveDown() {
+    public function moveDown()
+    {
         $this->logger->addInfo(sprintf('[%s] Current floor: %d', $this->name, $this->currentFloor - 1));
         sleep(self::SPEED);
         return $this->currentFloor--;
@@ -105,12 +103,13 @@ class Elevator
     /**
      * @return mixed
      */
-    public function popDestination() {
+    public function popDestination()
+    {
         return array_shift($this->destinationFloors);
     }
 
     /**
-     * @param null|string $direction
+     * @param  null|string $direction
      * @return null|string
      */
     public function destinationDirection($direction = null)
@@ -134,7 +133,7 @@ class Elevator
         if (count($this->destinationFloors) > 0) {
             if ($this->currentFloor < $this->nextDestination()->getFloor()) {
                 return 'UP';
-            } else if ($this->currentFloor > $this->nextDestination()->getFloor()) {
+            } elseif ($this->currentFloor > $this->nextDestination()->getFloor()) {
                 return 'DOWN';
             } else {
                 // current floor == destination->floor
@@ -150,7 +149,7 @@ class Elevator
      */
     public function highestDestination()
     {
-        return max(array_map(function(ElevatorRequest $floor) {
+        return max(array_map(function (ElevatorRequest $floor) {
             return $floor->getFloor();
         }, $this->destinationFloors));
     }
@@ -160,14 +159,14 @@ class Elevator
      */
     public function lowestDestination()
     {
-        return min(array_map(function(ElevatorRequest $floor) {
+        return min(array_map(function (ElevatorRequest $floor) {
             return $floor->getFloor();
         }, $this->destinationFloors));
     }
 
     /**
-     * @return string
      * @throws ElevatorAlarmException
+     * @return string
      */
     public function status()
     {
@@ -224,5 +223,4 @@ class Elevator
     {
         $this->state = 'ALARM';
     }
-
 }

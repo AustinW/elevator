@@ -4,7 +4,6 @@ use AustinW\Elevator\Elevator;
 use AustinW\Elevator\ElevatorController;
 use AustinW\Elevator\ElevatorFloor;
 use AustinW\Elevator\ElevatorRequest;
-use AustinW\Elevator\ElevatorScheduler;
 use AustinW\Elevator\Exception\ElevatorShutOffException;
 use AustinW\Elevator\Exception\UnderMaintenanceException;
 use PHPUnit\Framework\TestCase;
@@ -13,9 +12,6 @@ class ElevatorControllerTest extends TestCase
 {
     /** @var ElevatorController $elevatorController */
     protected $elevatorController;
-
-    /** @var  ElevatorScheduler $elevatorScheduler */
-    protected $elevatorScheduler;
 
     public function setUp()
     {
@@ -34,8 +30,6 @@ class ElevatorControllerTest extends TestCase
         $this->elevatorController->setFloors($floors);
 
         $this->elevatorController->startUp();
-
-        $this->elevatorScheduler = new ElevatorScheduler($this->elevatorController);
     }
 
     public function testRequestingTwoElevators()
@@ -121,7 +115,7 @@ class ElevatorControllerTest extends TestCase
     public function testRequestFromSixthFloorToGround()
     {
         $this->elevatorController->pickUp(new ElevatorRequest(6, 'DOWN'));
-        $elevator = $this->elevatorController->getElevators()[0];
+        $elevator = $this->elevatorController->getElevator(0);
 
         for ($i = 0; $i < 6; $i++) {
             $this->elevatorController->step();
@@ -141,7 +135,7 @@ class ElevatorControllerTest extends TestCase
     public function testRequestFromFifthFloorToSeventhFloorRequest()
     {
         $this->elevatorController->pickUp(new ElevatorRequest(5, 'UP'));
-        $elevator = $this->elevatorController->getElevators()[0];
+        $elevator = $this->elevatorController->getElevator(0);
 
         for ($i = 0; $i < 5; $i++) {
             $this->elevatorController->step();
@@ -160,8 +154,10 @@ class ElevatorControllerTest extends TestCase
 
     public function testRequestFromThirdFloorToGround()
     {
-        $this->elevatorController->pickUp(new ElevatorRequest(3, 'DOWN'));
-        $elevator = $this->elevatorController->getElevators()[0];
+        $firstFloorButton = new ElevatorFloor($this->elevatorController, 3);
+        $firstFloorButton->pressDown();
+
+        $elevator = $this->elevatorController->getElevator(0);
 
         for ($i = 0; $i < 3; $i++) {
             $this->elevatorController->step();
@@ -180,8 +176,9 @@ class ElevatorControllerTest extends TestCase
 
     public function testRequestFromGroundFloorToSeventhFloor()
     {
-        $this->elevatorController->pickUp(new ElevatorRequest(1, 'UP'));
-        $elevator = $this->elevatorController->getElevators()[0];
+        $firstFloorButton = new ElevatorFloor($this->elevatorController, 1);
+        $firstFloorButton->pressUp();
+        $elevator = $this->elevatorController->getElevator(0);
 
         for ($i = 0; $i < 1; $i++) {
             $this->elevatorController->step();
@@ -208,6 +205,18 @@ class ElevatorControllerTest extends TestCase
         $this->elevatorController->destination(0, new ElevatorRequest(2, 'UP'));
         $this->elevatorController->destination(0, new ElevatorRequest(4, 'UP'));
 
+    }
+
+    public function testElevatorFloorButtonCallsElevator()
+    {
+        $button = new ElevatorFloor($this->elevatorController, 2);
+        $button->pressUp();
+
+        for ($i = 0; $i < 2; $i++) {
+            $this->elevatorController->step();
+        }
+
+        $this->assertEquals(2, $this->elevatorController->getElevator(0)->getCurrentFloor());
     }
 
     public function tearDown()

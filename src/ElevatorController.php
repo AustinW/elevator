@@ -11,7 +11,6 @@ class ElevatorController
     /* @var array $elevators */
     protected $elevators;
 
-
     protected $status;
 
     protected $pickupLocations = [];
@@ -232,5 +231,14 @@ class ElevatorController
     public function getElevators()
     {
         return $this->elevators;
+    }
+
+    /**
+     * @param $index
+     * @return Elevator
+     */
+    public function getElevator($index)
+    {
+        return $this->elevators[$index];
     }
 }

@@ -28,7 +28,7 @@ class ElevatorFloor
      */
     public function pressUp()
     {
-        $this->requestPickup();
+        $this->requestPickup('UP');
     }
 
     /**
@@ -36,16 +36,16 @@ class ElevatorFloor
      */
     public function pressDown()
     {
-        $this->requestPickup();
+        $this->requestPickup('DOWN');
     }
 
     /**
      *
      */
-    public function requestPickup()
+    protected function requestPickup($direction)
     {
         // Should fire an event, not be tied to ElevatorController
-        $this->elevatorController->pickUp($this->floor);
+        $this->elevatorController->pickUp(new ElevatorRequest($this->floor, $direction));
     }
 
     /**
