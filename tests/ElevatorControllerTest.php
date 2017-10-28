@@ -9,7 +9,7 @@ use AustinW\Elevator\Exception\ElevatorShutOffException;
 use AustinW\Elevator\Exception\UnderMaintenanceException;
 use PHPUnit\Framework\TestCase;
 
-class ElevatorControlSystemTest extends TestCase
+class ElevatorControllerTest extends TestCase
 {
     /** @var ElevatorController $elevatorController */
     protected $elevatorController;
