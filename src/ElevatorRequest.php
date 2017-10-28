@@ -54,6 +54,4 @@ class ElevatorRequest
     {
         return $this->direction;
     }
-
-
 }

@@ -2,7 +2,6 @@
 
 namespace AustinW\Elevator;
 
-use AustinW\Elevator\Button\FloorButton;
 use AustinW\Elevator\Exception\ElevatorShutOffException;
 use AustinW\Elevator\Exception\UnderMaintenanceException;
 
@@ -22,12 +21,12 @@ class ElevatorController
 
     /**
      * ElevatorController constructor.
-     * @param array $elevators
+     * @param array      $elevators
      * @param array|null $floors
      */
-    public function __construct(Array $elevators, Array $floors = null)
+    public function __construct(array $elevators, array $floors = null)
     {
-        foreach($elevators as $elevator) {
+        foreach ($elevators as $elevator) {
             $elevator->setCurrentFloor(Elevator::MIN_FLOOR);
         }
 
@@ -59,7 +58,7 @@ class ElevatorController
     }
 
     /**
-     * @param ElevatorRequest $request
+     * @param  ElevatorRequest          $request
      * @throws ElevatorShutOffException
      */
     public function pickUp(ElevatorRequest $request)
@@ -73,7 +72,7 @@ class ElevatorController
 
     /**
      * @param $elevatorId
-     * @param ElevatorRequest $destination
+     * @param  ElevatorRequest           $destination
      * @throws ElevatorShutOffException
      * @throws UnderMaintenanceException
      */
@@ -145,17 +144,17 @@ class ElevatorController
                         $elevator->addNewDestination($pickupLocation);
                         array_shift($this->pickupLocations);
                         $pickupLocationServed = true;
-                    } else if ($this->_elevatorOnTheWay('UP', $elevator, $pickupLocation)) {
+                    } elseif ($this->_elevatorOnTheWay('UP', $elevator, $pickupLocation)) {
                         $this->logger->addInfo(sprintf('[%s] Adding pickup location on floor %d for elevator on the way UP at currently at floor %d', $elevator->getName(), $pickupLocation->getFloor(), $elevator->getCurrentFloor()));
                         $elevator->addNewDestination($pickupLocation);
                         array_shift($this->pickupLocations);
                         $pickupLocationServed = true;
-                    } else if ($this->_elevatorOnTheWay('DOWN', $elevator, $pickupLocation)) {
+                    } elseif ($this->_elevatorOnTheWay('DOWN', $elevator, $pickupLocation)) {
                         $this->logger->addInfo(sprintf('[%s] Adding pickup location on floor %d for elevator on the way DOWN at currently at floor %d', $elevator->getName(), $pickupLocation->getFloor(), $elevator->getCurrentFloor()));
                         $elevator->addNewDestination($pickupLocation);
                         array_shift($this->pickupLocations);
                         $pickupLocationServed = true;
-                    } else if ($elevator->status() === 'EMPTY') {
+                    } elseif ($elevator->status() === 'EMPTY') {
                         $this->logger->addInfo(sprintf('[%s] Adding pickup location on floor %d for elevator sitting at floor %d', $elevator->getName(), $pickupLocation->getFloor(), $elevator->getCurrentFloor()));
                         $elevator->addNewDestination($pickupLocation);
                         array_shift($this->pickupLocations);
@@ -168,8 +167,8 @@ class ElevatorController
 
     /**
      * @param $direction
-     * @param Elevator $elevator
-     * @param ElevatorRequest $pickupLocation
+     * @param  Elevator        $elevator
+     * @param  ElevatorRequest $pickupLocation
      * @return bool
      */
     private function _elevatorOnTheWay($direction, Elevator $elevator, ElevatorRequest $pickupLocation)
@@ -201,7 +200,7 @@ class ElevatorController
     }
 
     /**
-     * @param int $index
+     * @param  int           $index
      * @return ElevatorFloor
      */
     public function getFloor($index)

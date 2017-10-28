@@ -22,8 +22,7 @@ class ElevatorButton
         $this->floor = $floor;
     }
 
-    /**
-     */
+    
     public function press()
     {
         $request = new ElevatorRequest($this->floor);

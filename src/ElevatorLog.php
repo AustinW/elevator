@@ -65,7 +65,7 @@ class ElevatorLog
     }
 
     /**
-     * @param int $logLevel
+     * @param  int   $logLevel
      * @return $this
      */
     public function setLogLevel($logLevel)

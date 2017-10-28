@@ -23,25 +23,19 @@ class ElevatorFloor
         $this->floor = $floor;
     }
 
-    /**
-     *
-     */
+    
     public function pressUp()
     {
         $this->requestPickup('UP');
     }
 
-    /**
-     *
-     */
+    
     public function pressDown()
     {
         $this->requestPickup('DOWN');
     }
 
-    /**
-     *
-     */
+    
     protected function requestPickup($direction)
     {
         // Should fire an event, not be tied to ElevatorController
@@ -56,9 +50,7 @@ class ElevatorFloor
         return $this->status === 'OPEN';
     }
 
-    /**
-     *
-     */
+    
     public function reopen()
     {
         $this->status = 'OPEN';
@@ -72,9 +64,7 @@ class ElevatorFloor
         return $this->status === 'MAINTENANCE';
     }
 
-    /**
-     *
-     */
+    
     public function closeForMaintenance()
     {
         $this->status = 'MAINTENANCE';
