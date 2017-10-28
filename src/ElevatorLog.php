@@ -35,7 +35,7 @@ class ElevatorLog
         $output = "[%datetime%] %channel%.%level_name%: %message%\n";
         $formatter = new LineFormatter($output);
 
-        $streamHandler = new StreamHandler($file, $this->logLevel);
+        $streamHandler = new StreamHandler(__DIR__. '/../' . $file, $this->logLevel);
         $streamHandler->setFormatter($formatter);
 
         $this->logger = new Logger('ElevatorLogger');

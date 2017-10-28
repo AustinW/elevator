@@ -37,7 +37,7 @@ class ElevatorController
         }
 
         $elevatorLog = new ElevatorLog();
-        $elevatorLog->setTerminalOutput();
+        $elevatorLog->setFileOutput('test.log');
         $this->logger = $elevatorLog->getLogger();
     }
 
