@@ -223,4 +223,15 @@ class Elevator
     {
         $this->state = 'ALARM';
     }
+
+    /**
+     * @param $floor
+     * @return mixed
+     */
+    public function pressButton($floor)
+    {
+        $this->buttons[$floor]->press();
+    }
+
+
 }

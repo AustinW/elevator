@@ -21,11 +21,16 @@ class ElevatorButton
         $this->elevator = $elevator;
         $this->floor = $floor;
     }
-
     
     public function press()
     {
-        $request = new ElevatorRequest($this->floor);
+        if ($this->elevator->getCurrentFloor() === $this->floor) {
+            return;
+        }
+
+        $direction = ($this->elevator->getCurrentFloor() < $this->floor) ? 'UP' : 'DOWN';
+
+        $request = new ElevatorRequest($this->floor, $direction);
 
         $this->elevator->addNewDestination($request);
     }
